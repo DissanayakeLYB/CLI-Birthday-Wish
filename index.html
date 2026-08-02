@@ -105,7 +105,12 @@
   @keyframes blink{ 50%{ opacity:0; } }
 
   #hiddenInput{
-    position:absolute; opacity:0; pointer-events:none; width:1px; height:1px;
+    position:absolute; top:0; left:0;
+    opacity:0; pointer-events:none;
+    width:100%; height:40px;
+    font-size:16px;
+    border:none; outline:none; background:transparent; color:transparent;
+    caret-color:transparent;
   }
 
   pre.art{
@@ -145,7 +150,7 @@
   </div>
 </div>
 
-<input id="hiddenInput" autocomplete="off" autocapitalize="off" spellcheck="false" />
+<input id="hiddenInput" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
 
 <script>
 /* ============================================================
@@ -228,10 +233,23 @@ function focusInput(){ hiddenInput.focus(); }
 screen.addEventListener('click', focusInput);
 window.addEventListener('load', focusInput);
 
+function moveCaretToEnd(){
+  const len = hiddenInput.value.length;
+  try{ hiddenInput.setSelectionRange(len, len); }catch(e){}
+}
+
 hiddenInput.addEventListener('input', () => {
   typedSpan.textContent = hiddenInput.value;
   scrollDown();
+  moveCaretToEnd();
 });
+
+hiddenInput.addEventListener('keydown', () => {
+  // runs before the keystroke lands, so also fix it right after
+  setTimeout(moveCaretToEnd, 0);
+});
+
+hiddenInput.addEventListener('focus', moveCaretToEnd);
 
 hiddenInput.addEventListener('keydown', (e) => {
   if(e.key === 'Enter'){
