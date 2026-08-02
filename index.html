@@ -180,10 +180,79 @@ const COMMAND_HELP = [
   "  clear     - clean the screen",
 ];
 
-const LOVE_TEXT = [
-  "Here's a little truth, no code needed:",
-  "You make ordinary days feel special, just by being in them.",
-  "I'm the lucky one, every single day, that it's you I get to love.",
+const LOVE_NOTES = [
+  [
+    "Here's a little truth, no code needed:",
+    "You make ordinary days feel special, just by being in them.",
+    "I'm the lucky one, every single day, that it's you I get to love."
+  ],
+  [
+    "Every time I think of you, I can't help but smile.",
+    "You are my favorite notification, my favorite thought,",
+    "and my favorite person."
+  ],
+  [
+    "No matter what happens, you are always the best part of my day.",
+    "Thank you for being you."
+  ],
+  [
+    "I just wanted to remind you how deeply and truly you are loved.",
+    "Forever and always. 💖"
+  ],
+  [
+    "You are the reason I believe in love.",
+    "Every moment with you is a treasure."
+  ],
+  [
+    "If I had to live my life over again, I would find you sooner",
+    "so that I could love you longer."
+  ],
+  [
+    "I look at you and see the rest of my life in front of my eyes.",
+    "I love you so much."
+  ],
+  [
+    "You are my sun, my moon, and all of my stars. ✨"
+  ],
+  [
+    "I love you not only for what you are,",
+    "but for what I am when I am with you."
+  ],
+  [
+    "You are my today and all of my tomorrows."
+  ],
+  [
+    "I never knew what true love was until I met you."
+  ],
+  [
+    "Every time I see you, I fall in love all over again.",
+    "You still give me butterflies."
+  ],
+  [
+    "I love the way you laugh, the way you smile, and the way you just are."
+  ],
+  [
+    "You're not just my partner, you're my absolute best friend."
+  ],
+  [
+    "My heart is, and always will be, yours.",
+    "Forever and ever."
+  ],
+  [
+    "I want to hold your hand at 80 and say we made it."
+  ],
+  [
+    "You are the missing piece I've been trying to find all my life."
+  ],
+  [
+    "Thank you for coming into my life and making it so incredibly beautiful."
+  ],
+  [
+    "Loving you is the easiest and best thing I've ever done."
+  ],
+  [
+    "I am so incredibly proud of you, and I am so proud to be yours."
+  ]
 ];
 
 const GIFT_TEXT = [
@@ -282,7 +351,8 @@ function handleSubmit(raw){
       addLinesDelayed(COMMAND_HELP, 120, 'dim', () => setTimeout(showPrompt, 200));
       break;
     case 'love':
-      addLinesDelayed(LOVE_TEXT, 200, 'white', () => setTimeout(showPrompt, 200));
+      const randomLoveText = LOVE_NOTES[Math.floor(Math.random() * LOVE_NOTES.length)];
+      addLinesDelayed(randomLoveText, 200, 'white', () => setTimeout(showPrompt, 200));
       break;
     case 'gift':
       addLinesDelayed(GIFT_TEXT, 200, 'amber', () => setTimeout(showPrompt, 200));
