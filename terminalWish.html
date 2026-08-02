@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>vidu@dil-da: ~</title>
+<style>
+  :root{
+    --bg: #060a06;
+    --term-bg: #0a0f0a;
+    --green: #39ff6a;
+    --green-dim: #1f7a37;
+    --amber: #ffd27a;
+    --pink: #ff7ab8;
+    --white: #eafff0;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0; padding:0; height:100%;
+    background: radial-gradient(ellipse at center, #0b120b 0%, #030503 100%);
+    font-family: 'Courier New', 'Fira Code', monospace;
+    overflow: hidden;
+  }
+
+  body{
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  #wrap{
+    width: min(920px, 94vw);
+    height: min(620px, 88vh);
+    position: relative;
+  }
+
+  #terminal{
+    width:100%; height:100%;
+    background: var(--term-bg);
+    border-radius: 10px;
+    border: 1px solid #123018;
+    box-shadow: 0 0 0 1px #0e1a0e, 0 30px 80px rgba(0,0,0,0.7), 0 0 60px rgba(57,255,106,0.06);
+    display:flex; flex-direction:column;
+    overflow:hidden;
+  }
+
+  #titlebar{
+    background: linear-gradient(180deg,#101710,#0b110b);
+    padding: 10px 14px;
+    display:flex; align-items:center; gap:8px;
+    border-bottom: 1px solid #102410;
+    flex-shrink:0;
+  }
+  .dot{ width:11px; height:11px; border-radius:50%; }
+  .dot.r{ background:#ff5f57; }
+  .dot.y{ background:#febc2e; }
+  .dot.g{ background:#28c840; }
+  #titletext{
+    flex:1; text-align:center;
+    color:#5c8a63; font-size:12px; letter-spacing:1px;
+  }
+
+  #screen{
+    flex:1;
+    padding: 22px 26px;
+    overflow-y: auto;
+    color: var(--green);
+    font-size: 15px;
+    line-height: 1.65;
+    position:relative;
+  }
+
+  #screen::before{
+    content:"";
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 1px,
+      rgba(0,0,0,0.10) 2px,
+      rgba(0,0,0,0.10) 3px
+    );
+    pointer-events:none;
+    mix-blend-mode: multiply;
+  }
+
+  #output{ white-space: pre-wrap; word-break: break-word; text-shadow: 0 0 6px rgba(57,255,106,0.45); }
+
+  .line{ margin: 0 0 2px 0; }
+  .dim{ color: var(--green-dim); }
+  .amber{ color: var(--amber); text-shadow:0 0 6px rgba(255,210,122,0.5); }
+  .pink{ color: var(--pink); text-shadow:0 0 6px rgba(255,122,184,0.5); }
+  .white{ color: var(--white); }
+
+  .inputline{ display:flex; }
+  .prompt-fixed{ white-space:pre; }
+  #typed{ white-space:pre; }
+  .cursor{
+    display:inline-block; width:9px; height:17px;
+    background: var(--green);
+    margin-left:2px; vertical-align:-3px;
+    animation: blink 1s steps(1) infinite;
+    box-shadow: 0 0 8px rgba(57,255,106,0.8);
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  #hiddenInput{
+    position:absolute; opacity:0; pointer-events:none; width:1px; height:1px;
+  }
+
+  pre.art{
+    margin: 10px 0 6px 0;
+    font-size: 12px;
+    line-height: 1.15;
+    color: var(--amber);
+    text-shadow: 0 0 10px rgba(255,210,122,0.6);
+  }
+
+  #confettiCanvas{
+    position:absolute; inset:0;
+    pointer-events:none;
+    z-index: 5;
+  }
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-thumb{ background:#1a3a1e; border-radius:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+</style>
+</head>
+<body>
+
+<div id="wrap">
+  <div id="terminal">
+    <div id="titlebar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div id="titletext">vidu@dil-da: ~</div>
+    </div>
+    <div id="screen">
+      <div id="output"></div>
+      <div class="inputline" id="inputline" style="display:none;">
+        <span class="prompt-fixed" id="promptFixed">vidu ~ &gt; </span><span id="typed"></span><span class="cursor"></span>
+      </div>
+    </div>
+    <canvas id="confettiCanvas"></canvas>
+  </div>
+</div>
+
+<input id="hiddenInput" autocomplete="off" autocapitalize="off" spellcheck="false" />
+
+<script>
+/* ============================================================
+   EASY-EDIT ZONE — change these to make it your own
+   ============================================================ */
+const SECRET_ANSWER = "pooh";          // case doesn't matter
+const WRONG_REPLY   = "The 4 letter word.... ? 🌚";
+
+const BIRTHDAY_MESSAGES = [
+  "Happy birthday, my love. 🎂",
+  "",
+  "Today is all about you, and I just wanted to make something small and silly to see you smile.",
+  "",
+  "I also want to say something I mean with my whole heart: I'm sorry.",
+  "I'm sorry for the times I've hurt you, said the wrong things, or made you feel like you weren't loved the way you deserve.",
+  "You mean the world to me, and I'm trying, every single day, to be someone who never lets that happen to you again.",
+  "",
+  "Thank you for staying, for loving me anyway, and for being the best part of my life.",
+  "I love you more than any of this silly code could ever show. ❤️",
+];
+
+const COMMAND_HELP = [
+  "here's what you can type:",
+  "  love      - a little reminder of how much I love you",
+  "  gift      - a hint about your real gift",
+  "  confetti  - more sparkles, just because",
+  "  clear     - clean the screen",
+];
+
+const LOVE_TEXT = [
+  "Here's a little truth, no code needed:",
+  "You make ordinary days feel special, just by being in them.",
+  "I'm the lucky one, every single day, that it's you I get to love.",
+];
+
+const GIFT_TEXT = [
+  "🎁 Your real gift is waiting for you in person, not on a screen.",
+  "Come find me, sudu.",
+];
+/* ============================================================ */
+
+const output = document.getElementById('output');
+const inputline = document.getElementById('inputline');
+const typedSpan = document.getElementById('typed');
+const hiddenInput = document.getElementById('hiddenInput');
+const screen = document.getElementById('screen');
+
+let mode = 'locked'; // 'locked' | 'unlocked'
+
+function scrollDown(){ screen.scrollTop = screen.scrollHeight; }
+
+function addLine(text, cls){
+  const div = document.createElement('div');
+  div.className = 'line' + (cls ? ' ' + cls : '');
+  div.textContent = text;
+  output.appendChild(div);
+  scrollDown();
+  return div;
+}
+
+function addLinesDelayed(lines, delay, cls, cb){
+  let i = 0;
+  function step(){
+    if(i >= lines.length){ if(cb) cb(); return; }
+    addLine(lines[i], cls);
+    i++;
+    setTimeout(step, delay);
+  }
+  step();
+}
+
+function showPrompt(){
+  inputline.style.display = 'flex';
+  typedSpan.textContent = '';
+  hiddenInput.value = '';
+  focusInput();
+}
+
+function focusInput(){ hiddenInput.focus(); }
+screen.addEventListener('click', focusInput);
+window.addEventListener('load', focusInput);
+
+hiddenInput.addEventListener('input', () => {
+  typedSpan.textContent = hiddenInput.value;
+  scrollDown();
+});
+
+hiddenInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    const value = hiddenInput.value;
+    const shown = document.getElementById('promptFixed').textContent + value;
+    inputline.style.display = 'none';
+    addLine(shown);
+    handleSubmit(value);
+  }
+});
+
+function normalize(s){
+  return s.trim().toLowerCase();
+}
+
+function handleSubmit(raw){
+  const val = normalize(raw);
+  if(mode === 'locked'){
+    if(val === SECRET_ANSWER){
+      unlock();
+    } else {
+      addLine(WRONG_REPLY, 'pink');
+      setTimeout(showPrompt, 300);
+    }
+    return;
+  }
+
+  // unlocked mode — command handling
+  switch(val){
+    case 'help':
+      addLinesDelayed(COMMAND_HELP, 120, 'dim', () => setTimeout(showPrompt, 200));
+      break;
+    case 'love':
+      addLinesDelayed(LOVE_TEXT, 200, 'white', () => setTimeout(showPrompt, 200));
+      break;
+    case 'gift':
+      addLinesDelayed(GIFT_TEXT, 200, 'amber', () => setTimeout(showPrompt, 200));
+      break;
+    case 'confetti':
+      burstConfetti();
+      setTimeout(showPrompt, 200);
+      break;
+    case 'clear':
+      output.innerHTML = '';
+      setTimeout(showPrompt, 100);
+      break;
+    case '':
+      showPrompt();
+      break;
+    default:
+      addLine("hmm, I don't have that one saved. try typing help and press enter 😊", 'dim');
+      setTimeout(showPrompt, 200);
+  }
+}
+
+/* ---------------- boot + intro sequence ---------------- */
+const BOOT_LINES = [
+  "starting something special, just for you ✨",
+  "loading all the love I have for you... done",
+  "double-checking today's date... yup, it's your day 🎂",
+  "getting everything ready for you...",
+];
+
+function boot(){
+  addLinesDelayed(BOOT_LINES, 350, 'dim', () => {
+    setTimeout(() => {
+      addLine('');
+      addLine('What do you call me by, sudu?');
+      showPrompt();
+    }, 400);
+  });
+}
+boot();
+
+/* ---------------- unlock sequence ---------------- */
+const ART = [
+"  _   _    _    ____  ____ __   __   ",
+" | | | |  / \\  |  _ \\|  _ \\\\ \\ / /   ",
+" | |_| | / _ \\ | |_) | |_) |\\ V /    ",
+" |  _  |/ ___ \\|  __/|  __/  | |     ",
+" |_| |_/_/   \\_\\_|   |_|     |_|     ",
+"  ____ ___ ____ _____ _   _ ____    _ __   __",
+" | __ )_ _|  _ \\_   _| | | |  _ \\  / \\\\ \\ / /",
+" |  _ \\| || |_) || | | |_| | | | |/ _ \\\\ V / ",
+" | |_) | ||  _ < | | |  _  | |_| / ___ \\| |  ",
+" |____/___|_| \\_\\|_| |_| |_|____/_/   \\_\\_|  ",
+].join('\n');
+
+function unlock(){
+  mode = 'unlocked';
+  addLine('');
+  addLine("that's exactly right, sudu 💚", 'amber');
+  burstConfetti(2600);
+
+  setTimeout(() => {
+    const pre = document.createElement('pre');
+    pre.className = 'art';
+    pre.textContent = ART;
+    output.appendChild(pre);
+    scrollDown();
+
+    setTimeout(() => {
+      addLinesDelayed(BIRTHDAY_MESSAGES, 380, 'white', () => {
+        addLine('');
+        addLine("if you'd like, type help and press enter to see a little more 🎁", 'dim');
+        setTimeout(showPrompt, 300);
+      });
+    }, 500);
+  }, 500);
+}
+
+/* ---------------- confetti ---------------- */
+const canvas = document.getElementById('confettiCanvas');
+const ctx = canvas.getContext('2d');
+let confettiParticles = [];
+let confettiRunning = false;
+
+function resizeCanvas(){
+  const t = document.getElementById('terminal');
+  canvas.width = t.clientWidth;
+  canvas.height = t.clientHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const COLORS = ['#39ff6a', '#ffd27a', '#ff7ab8', '#eafff0', '#7ad9ff'];
+
+function burstConfetti(duration){
+  duration = duration || 2200;
+  const count = 140;
+  for(let i=0; i<count; i++){
+    confettiParticles.push({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * canvas.height * 0.3,
+      w: 5 + Math.random() * 5,
+      h: 8 + Math.random() * 6,
+      color: COLORS[Math.floor(Math.random()*COLORS.length)],
+      vy: 2 + Math.random() * 3,
+      vx: -1.5 + Math.random() * 3,
+      rot: Math.random() * 360,
+      vr: -6 + Math.random() * 12,
+    });
+  }
+  if(!confettiRunning){
+    confettiRunning = true;
+    requestAnimationFrame(animateConfetti);
+  }
+  setTimeout(() => { /* let existing particles fall out naturally */ }, duration);
+}
+
+function animateConfetti(){
+  ctx.clearRect(0,0,canvas.width, canvas.height);
+  confettiParticles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.rot += p.vr;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot * Math.PI/180);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+  });
+  confettiParticles = confettiParticles.filter(p => p.y < canvas.height + 30);
+  if(confettiParticles.length > 0){
+    requestAnimationFrame(animateConfetti);
+  } else {
+    confettiRunning = false;
+  }
+}
+
+</script>
+</body>
+</html>
